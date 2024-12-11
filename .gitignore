@@ -3,3 +3,7 @@ __pycache__/
 *.pyd
 *.pyc
 venv/
+.dvc/cache
+.dvc/tmp
+.env
+
