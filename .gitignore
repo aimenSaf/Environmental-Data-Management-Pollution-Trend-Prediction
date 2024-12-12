@@ -6,4 +6,6 @@ venv/
 .dvc/cache
 .dvc/tmp
 .env
-
+data_collection.log
+data/
+*.csv
