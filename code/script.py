@@ -62,5 +62,5 @@ if __name__ == "__main__":
     while True:
         main()
         sleeping_time = 300
-        logging.info(f"Sleeping for {sleeping_time // 60} minutes")
-        time.sleep(sleeping_time)   # 5 min for testing
+        logging.info(f"Sleeping for {sleeping_time // 60} hour")
+        time.sleep(sleeping_time)   # 1 hour for testing
