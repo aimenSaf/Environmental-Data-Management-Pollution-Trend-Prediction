@@ -6,13 +6,10 @@ from datetime import datetime
 import time
 import logging
 
-# Load environment variables from .env file, searching from the script's directory upwards
 load_dotenv(find_dotenv())
 
-# Set up logging
 logging.basicConfig(filename='data_collection.log', level=logging.INFO, format='%(asctime)s:%(levelname)s:%(message)s')
 
-# Ensure environment variables are set
 if "OPENWEATHERMAP_API_KEY" not in os.environ or "AIRVISUAL_API_KEY" not in os.environ:
     logging.critical("API keys are not set in environment variables")
     raise ValueError("API keys are not set in environment variables")
@@ -24,19 +21,21 @@ API_KEYS = {
 }
 URLS = {
     "OpenWeatherMap": "http://api.openweathermap.org/data/2.5/weather",
-    "AirVisual": "http://api.iqair.com/v1/cities"
+    "AirVisual": "https://api.airvisual.com/v2/city"
 }
 
 # Parameters for the API calls
 PARAMETERS = {
     "OpenWeatherMap": {"q": "London,uk", "appid": API_KEYS["OpenWeatherMap"]},
-    "AirVisual": {"country": "United Kingdom", "state": "England", "city": "London", "key": API_KEYS["AirVisual"]}
+    "AirVisual" : {"city": "London", "state": "England", "country": "United Kingdom","key": API_KEYS["AirVisual"]
+}
+
 }
 
 def fetch_data(url, params):
     try:
         response = requests.get(url, params=params)
-        response.raise_for_status()  # Raises an HTTPError for bad responses
+        response.raise_for_status()  
         return response.json()
     except requests.RequestException as e:
         logging.error(f"Error fetching data from {url}: {str(e)}")
@@ -44,7 +43,6 @@ def fetch_data(url, params):
 
 def save_data(data, filename):
     try:
-        # Assuming data is a dict that can be directly passed to DataFrame
         df = pd.DataFrame([data])
         df.to_csv(filename, mode='a', header=not pd.io.common.file_exists(filename), index=False)
         logging.info(f"Data saved successfully to {filename}")
@@ -52,18 +50,17 @@ def save_data(data, filename):
         logging.error(f"Error saving data: {str(e)}")
 
 def main():
-    # Fetch and save weather data
     weather_data = fetch_data(URLS["OpenWeatherMap"], PARAMETERS["OpenWeatherMap"])
     if weather_data:
-        save_data(weather_data, "weather_data.csv")
+        save_data(weather_data, "data/weather_data.csv")
     
-    # Fetch and save air quality data
-    air_quality_data = fetch_data(URLS["AirVisual"], PARAMETERS["AirVisual"])
+    air_quality_data = fetch_data("https://api.airvisual.com/v2/city", PARAMETERS["AirVisual"])
     if air_quality_data:
-        save_data(air_quality_data, "air_quality_data.csv")
+        save_data(air_quality_data, "data/air_quality_data.csv")
 
 if __name__ == "__main__":
     while True:
         main()
-        logging.info("Sleeping for 1 hour")
-        time.sleep(3600)  # Sleep for 1 hour
+        sleeping_time = 300
+        logging.info(f"Sleeping for {sleeping_time // 60} minutes")
+        time.sleep(sleeping_time)   # 5 min for testing
