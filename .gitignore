@@ -10,3 +10,5 @@ data_collection.log
 *.csv
 data/*
 !data/*.dvc
+output/*
+!output/*.dvc
