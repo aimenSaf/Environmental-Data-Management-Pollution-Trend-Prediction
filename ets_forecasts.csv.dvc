@@ -1,0 +1,5 @@
+outs:
+- md5: 2e955713a2695cd8f8f64d2bb11a9502
+  size: 970
+  hash: md5
+  path: ets_forecasts.csv

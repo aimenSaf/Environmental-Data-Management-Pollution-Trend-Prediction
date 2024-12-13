@@ -12,3 +12,4 @@ data/*
 !data/*.dvc
 output/*
 !output/*.dvc
+mlruns/
