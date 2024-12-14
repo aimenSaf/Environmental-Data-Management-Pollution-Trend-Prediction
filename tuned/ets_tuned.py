@@ -1,4 +1,3 @@
-# ets_tuning.py
 import pandas as pd
 import numpy as np
 from statsmodels.tsa.holtwinters import ExponentialSmoothing
@@ -25,11 +24,12 @@ def calculate_accuracy(y_true, y_pred):
     accuracy = 100 - np.mean(error) * 100
     return accuracy
 
-# Simplified parameter grid suitable for small dataset
+# Simplified parameter grid
 param_grid = {
     'trend': [None, 'add', 'mul'],
+    'damped_trend': [True, False],
     'smoothing_level': [0.1, 0.3, 0.5, 0.7, 0.9],  # Alpha values
-    'smoothing_slope': [0.1, 0.3, 0.5, 0.7, 0.9]   # Beta values
+    'smoothing_slope': [0.1, 0.3, 0.5]  # Beta values
 }
 
 # Train-test split
@@ -43,66 +43,68 @@ best_params = None
 results = []
 
 for trend in param_grid['trend']:
-    for alpha in param_grid['smoothing_level']:
-        for beta in param_grid['smoothing_slope']:
-            try:
-                with mlflow.start_run(run_name=f"ETS_{trend}_{alpha}_{beta}"):
-                    # Log parameters
-                    params = {
-                        'trend': trend,
-                        'smoothing_level': alpha,
-                        'smoothing_slope': beta
-                    }
-                    mlflow.log_params(params)
-                    
-                    # Fit model
-                    model = ExponentialSmoothing(
-                        train['aqi_us'],
-                        trend=trend,
-                        seasonal=None  # Remove seasonal component
-                    )
-                    fitted_model = model.fit(
-                        smoothing_level=alpha,
-                        smoothing_slope=beta
-                    )
-                    
-                    # Make predictions
-                    forecast = fitted_model.forecast(len(test))
-                    
-                    # Calculate metrics
-                    rmse = np.sqrt(mean_squared_error(test['aqi_us'], forecast))
-                    mae = mean_absolute_error(test['aqi_us'], forecast)
-                    accuracy = calculate_accuracy(test['aqi_us'], forecast)
-                    
-                    # Log metrics
-                    mlflow.log_metrics({
-                        "rmse": rmse,
-                        "mae": mae,
-                        "accuracy": accuracy
-                    })
-                    
-                    results.append({
-                        **params,
-                        'rmse': rmse,
-                        'mae': mae,
-                        'accuracy': accuracy
-                    })
-                    
-                    if rmse < best_score:
-                        best_score = rmse
-                        best_params = params
-                        best_forecast = forecast
-                    
-                    print(f"ETS - Trend: {trend}, Alpha: {alpha}, Beta: {beta}")
-                    print(f"RMSE: {rmse:.2f}, MAE: {mae:.2f}, Accuracy: {accuracy:.2f}%")
-                    
-            except Exception as e:
-                print(f"Error with parameters {params}: {str(e)}")
-                continue
+    for damped in param_grid['damped_trend']:
+        for alpha in param_grid['smoothing_level']:
+            for beta in param_grid['smoothing_slope']:
+                try:
+                    with mlflow.start_run(run_name=f"ETS_{trend}_{damped}_{alpha}_{beta}"):
+                        # Log parameters
+                        params = {
+                            'trend': trend,
+                            'damped_trend': damped,
+                            'smoothing_level': alpha,
+                            'smoothing_slope': beta
+                        }
+                        mlflow.log_params(params)
+                        
+                        # Fit model
+                        model = ExponentialSmoothing(
+                            train['aqi_us'],
+                            trend=trend,
+                            damped_trend=damped if trend is not None else False
+                        )
+                        fitted_model = model.fit(
+                            smoothing_level=alpha,
+                            smoothing_slope=beta
+                        )
+                        
+                        # Make predictions
+                        forecast = fitted_model.forecast(len(test))
+                        
+                        # Calculate metrics
+                        rmse = np.sqrt(mean_squared_error(test['aqi_us'], forecast))
+                        mae = mean_absolute_error(test['aqi_us'], forecast)
+                        accuracy = calculate_accuracy(test['aqi_us'], forecast)
+                        
+                        # Log metrics
+                        mlflow.log_metrics({
+                            "rmse": rmse,
+                            "mae": mae,
+                            "accuracy": accuracy
+                        })
+                        
+                        results.append({
+                            **params,
+                            'rmse': rmse,
+                            'mae': mae,
+                            'accuracy': accuracy
+                        })
+                        
+                        if rmse < best_score:
+                            best_score = rmse
+                            best_params = params
+                            best_forecast = forecast
+                        
+                        print(f"ETS - Trend: {trend}, Damped: {damped}, Alpha: {alpha}, Beta: {beta}")
+                        print(f"RMSE: {rmse:.2f}, MAE: {mae:.2f}, Accuracy: {accuracy:.2f}%")
+                        
+                except Exception as e:
+                    print(f"Error with parameters {params}: {str(e)}")
+                    continue
 
 # Save results
 results_df = pd.DataFrame(results)
-results_df.to_csv('C:/Users/aimen/Desktop/mlops/course-project-aimenSaf/output/ets_grid_search_results.csv', index=False)
+results_df.to_csv('ets_grid_search_results.csv', index=False)
 
 # Train final model with best parameters
 with mlflow.start_run(run_name="Best_ETS_Model"):
@@ -113,7 +115,7 @@ with mlflow.start_run(run_name="Best_ETS_Model"):
     final_model = ExponentialSmoothing(
         train['aqi_us'],
         trend=best_params['trend'],
-        seasonal=None
+        damped_trend=best_params['damped_trend']
     ).fit(
         smoothing_level=best_params['smoothing_level'],
         smoothing_slope=best_params['smoothing_slope']
@@ -145,8 +147,8 @@ with mlflow.start_run(run_name="Best_ETS_Model"):
     plt.tight_layout()
     
     # Save and log plot
-    plt.savefig('C:/Users/aimen/Desktop/mlops/course-project-aimenSaf/images/best_ets_forecast.png')
-    mlflow.log_artifact('C:/Users/aimen/Desktop/mlops/course-project-aimenSaf/images/best_ets_forecast.png')
+    plt.savefig('images/best_ets_forecast.png')
+    mlflow.log_artifact('images/best_ets_forecast.png')
     plt.close()
 
 print("\nBest ETS Parameters:", best_params)

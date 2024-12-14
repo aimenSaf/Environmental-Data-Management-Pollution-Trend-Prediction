@@ -1,0 +1,5 @@
+Best Model: ETS
+Best Model Parameters: {'smoothing_slope': '0.5', 'damped_trend': 'False', 'trend': 'add', 'smoothing_level': '0.1', 'seasonal_periods': None, 'seasonal': None, 'smoothing_seasonal': None}
+RMSE: 1.57
+MAE: 1.27
+Accuracy: 97.61%
